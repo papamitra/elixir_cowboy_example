@@ -10,6 +10,7 @@ defmodule DdsBlog do
     children = [
       # Starts a worker by calling: DdsBlog.Worker.start_link(arg1, arg2, arg3)
       # worker(DdsBlog.Worker, [arg1, arg2, arg3]),
+      worker(__MODULE__, [], function: :run)
     ]
 
     # See http://elixir-lang.org/docs/stable/elixir/Supervisor.html
@@ -17,4 +18,18 @@ defmodule DdsBlog do
     opts = [strategy: :one_for_one, name: DdsBlog.Supervisor]
     Supervisor.start_link(children, opts)
   end
+
+  def run do
+    routes = [
+      {"/", DdsBlog.Handler, []}
+    ]
+
+    dispatch = :cowboy_router.compile([{:_, routes}])
+
+    opts = [port: 8000]
+    env = [dispatch: dispatch]
+
+    {:ok, _pid} = :cowboy.start_http(:http, 100, opts, [env: env])
+  end
+
 end
