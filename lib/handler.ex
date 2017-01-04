@@ -16,13 +16,17 @@ defmodule DdsBlog.Handler do
     headers = [{"content-type", "text/html"}]
     file_lists = File.ls! "priv/contents/"
     content = print_articles file_lists, ""
-    {:ok, resp} = :cowboy_req.reply(200, headers, content, req)
+    title = "Welcome to DDS Blog"
+    body = EEx.eval_file "priv/themes/index.html.eex", [content: content, title: title]
+    {:ok, resp} = :cowboy_req.reply(200, headers, body, req)
   end
 
   def get_file("GET", param, req) do
     headers = [{"content-type", "text/html"}]
     {:ok, file} = File.read "priv/contents/" <> param <> ".md"
-    body = Markdown.to_html file
+    content = Markdown.to_html file
+    title = String.capitalize(param)
+    body = EEx.eval_file "priv/themes/index.html.eex", [content: content, title: title]
     {:ok, resp} = :cowboy_req.reply(200, headers, body, req)
   end
 
@@ -31,7 +35,7 @@ defmodule DdsBlog.Handler do
     sliced = String.slice article, 0, 100
     marked = Markdown.to_html sliced
     filename = String.slice(h, 0, String.length(h) - 3)
-    more = "<a class='button' href='#{filename}'>More</a><hr />"
+    more = EEx.eval_file "priv/themes/more_button.html.eex", [filename: filename]
     print_articles t, index_contents <> marked <> more
   end
 
